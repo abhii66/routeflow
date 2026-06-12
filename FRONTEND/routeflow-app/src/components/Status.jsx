@@ -12,7 +12,7 @@ const dotStyles = {
   Cancelled: 'bg-red-500',
 }
 
-export default function StatusPill({ status }) {
+export default function Status({ status }) {
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${dotStyles[status] || 'bg-gray-400'}`} />
