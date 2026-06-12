@@ -1,0 +1,96 @@
+###Manager Registration
+POST http://localhost:7909/auth-api/register
+Content-Type: application/json
+
+{
+  "name": "Abhiii",
+  "email": "manager@test.com",
+  "password": "123456",
+  "role": "manager"
+}
+
+###manager Login
+POST http://localhost:7909/auth-api/login
+Content-Type: application/json
+
+{
+  "email": "manager@test.com",
+  "password": "123456"
+}
+
+###Store Creation
+POST http://localhost:7909/store-api/
+Content-Type: application/json
+
+{
+  "name": "Abhiii Pharmacy",
+  "type": "pharmacy",
+  "address": "Hyderabad, Telangana"
+}
+
+###Rider Registration
+POST http://localhost:7909/auth-api/register
+Content-Type: application/json
+
+{
+  "name": "rider1",
+  "email": "rider@test.com",
+  "password": "123456",
+  "role": "rider"
+}
+
+###rider Login
+POST http://localhost:7909/auth-api/login
+Content-Type: application/json
+
+{
+  "email": "rider@test.com",
+  "password": "123456"
+}
+
+###order creation as manager
+POST http://localhost:7909/orders-api/
+Content-Type: application/json
+
+{
+  "customer": {
+    "name": "Test Customer",
+    "phone": "8888888888",
+    "address": "Banjara Hills, Hyderabad"
+  },
+  "items": [
+    { "name": "Paracetamol", "qty": 2, "price": 50 }
+  ],
+  "totalAmount": 100
+}
+
+###logout
+GET http://localhost:7909/auth-api/logout
+
+###Assigning order to rider
+PUT http://localhost:7909/orders-api/6a2c03fa6493c2b3ac3a7ae6/assign
+Content-Type: application/json
+
+{
+  "riderId": "6a2c03946493c2b3ac3a7ae5"
+}
+
+###check rider's assigned orders
+GET http://localhost:7909/riders-api/my-orders
+
+###delivery status update by rider
+PUT http://localhost:7909/orders-api/6a2c03fa6493c2b3ac3a7ae6/status
+Content-Type: application/json
+
+{
+  "status": "Delivered"
+}
+
+###get rider earnings
+GET http://localhost:7909/riders-api/earnings
+
+###get orders created by manager
+GET http://localhost:7909/orders-api/
+
+###get rider's availability status
+GET http://localhost:7909/riders-api/
