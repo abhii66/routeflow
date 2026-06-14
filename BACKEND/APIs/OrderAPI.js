@@ -77,32 +77,124 @@ orderApp.put(
   authorizeRoles("manager"),
   async (req, res) => {
     try {
-      const { riderId } = req.body;
+      const { riderIds } = req.body;
 
-      const rider = await User.findOne({ _id: riderId, role: "rider" });
-      if (!rider) return res.status(404).json({ message: "Rider not found" });
-      if (!rider.isAvailable)
-        return res.status(400).json({ message: "Rider is not available" });
+      if (!Array.isArray(riderIds) || riderIds.length === 0) {
+        return res.status(400).json({ message: "Select at least one rider" });
+      }
+
+      const riders = await User.find({
+        _id: { $in: riderIds },
+        role: "rider",
+        isAvailable: true,
+      });
+      if (riders.length === 0) {
+        return res.status(400).json({ message: "No available riders found" });
+      }
 
       const order = await Order.findByIdAndUpdate(
         req.params.id,
         {
-          assignedRider: riderId,
-          status: "Dispatched",
-          dispatchedAt: new Date(),
+          status: "AwaitingAcceptance",
+          candidateRiders: riders.map((r) => r._id),
+          assignedRider: null,
         },
         { new: true },
-      ).populate("assignedRider", "name phone");
+      );
 
       if (!order) return res.status(404).json({ message: "Order not found" });
 
-      // Mark rider as busy
-      await User.findByIdAndUpdate(riderId, { isAvailable: false });
+      riders.forEach((rider) => {
+        io.to(`rider:${rider._id}`).emit("orderOffer", order);
+      });
 
-      // Notify rider via Socket.IO
-      io.emit(`rider:${riderId}:newOrder`, order);
+      io.to(`store:${order.storeId}`).emit("orderUpdate", order);
 
-      res.json({ message: "Rider assigned, order dispatched", order });
+      res.json({
+        message: `Order offered to ${riders.length} rider(s)`,
+        order,
+      });
+    } catch (err) {
+      res.status(500).json({ message: "Server error", error: err.message });
+    }
+  },
+);
+
+// PUT /orders-api/:id/accept  → rider accepts the order
+orderApp.put(
+  "/:id/accept",
+  verifyToken,
+  authorizeRoles("rider"),
+  async (req, res) => {
+    try {
+      const order = await Order.findOne({
+        _id: req.params.id,
+        status: "AwaitingAcceptance",
+        candidateRiders: req.user._id,
+      });
+
+      if (!order) {
+        return res
+          .status(404)
+          .json({ message: "Order not available or already taken" });
+      }
+
+      const otherRiders = order.candidateRiders.filter(
+        (r) => r.toString() !== req.user._id.toString(),
+      );
+
+      order.status = "Dispatched";
+      order.assignedRider = req.user._id;
+      order.candidateRiders = [];
+      order.dispatchedAt = new Date();
+      await order.save();
+
+      await User.findByIdAndUpdate(req.user._id, { isAvailable: false });
+
+      otherRiders.forEach((riderId) => {
+        io.to(`rider:${riderId}`).emit("orderTaken", { orderId: order._id });
+      });
+
+      io.to(`store:${order.storeId}`).emit("orderUpdate", order);
+
+      res.json({ message: "Order accepted", order });
+    } catch (err) {
+      res.status(500).json({ message: "Server error", error: err.message });
+    }
+  },
+);
+
+// PUT /orders-api/:id/decline  → rider declines the order
+orderApp.put(
+  "/:id/decline",
+  verifyToken,
+  authorizeRoles("rider"),
+  async (req, res) => {
+    try {
+      const order = await Order.findOne({
+        _id: req.params.id,
+        status: "AwaitingAcceptance",
+        candidateRiders: req.user._id,
+      });
+
+      if (!order) {
+        return res
+          .status(404)
+          .json({ message: "Order not found or already taken" });
+      }
+
+      order.candidateRiders = order.candidateRiders.filter(
+        (r) => r.toString() !== req.user._id.toString(),
+      );
+
+      if (order.candidateRiders.length === 0) {
+        order.status = "Pending";
+        io.to(`store:${order.storeId}`).emit("orderUpdate", order);
+      }
+
+      await order.save();
+
+      res.json({ message: "Order declined", order });
     } catch (err) {
       res.status(500).json({ message: "Server error", error: err.message });
     }
@@ -136,9 +228,14 @@ orderApp.put(
       if (status === "Delivered") {
         order.deliveredAt = new Date();
 
-        // Credit delivery fee to rider earnings
+        const RIDER_INCENTIVE_RATE = 0.05;
+        const riderEarning =
+          order.deliveryFee +
+          Math.round(order.totalAmount * RIDER_INCENTIVE_RATE);
+        order.riderEarning = riderEarning;
+
         await User.findByIdAndUpdate(req.user._id, {
-          $inc: { totalEarnings: order.deliveryFee },
+          $inc: { totalEarnings: riderEarning },
           isAvailable: true,
         });
       } else {
@@ -149,9 +246,51 @@ orderApp.put(
       await order.save();
 
       // Notify manager via Socket.IO
-      io.emit(`store:${order.storeId}:orderUpdate`, order);
+      io.to(`store:${order.storeId}`).emit("orderUpdate", order);
 
       res.json({ message: `Order marked as ${status}`, order });
+    } catch (err) {
+      res.status(500).json({ message: "Server error", error: err.message });
+    }
+  },
+);
+// PUT /orders-api/:id/cancel  → cancelling an order
+orderApp.put(
+  "/:id/cancel",
+  verifyToken,
+  authorizeRoles("manager"),
+  async (req, res) => {
+    try {
+      const order = await Order.findById(req.params.id);
+      if (!order) return res.status(404).json({ message: "Order not found" });
+
+      if (order.status === "Delivered") {
+        return res
+          .status(400)
+          .json({ message: "Cannot cancel a delivered order" });
+      }
+      if (order.status === "Cancelled") {
+        return res.status(400).json({ message: "Order is already cancelled" });
+      }
+
+      const wasDispatched = order.status === "Dispatched";
+      const wasAwaiting = order.status === "AwaitingAcceptance";
+      const riderId = order.assignedRider;
+      const candidates = order.candidateRiders || [];
+      order.status = "Cancelled";
+      order.candidateRiders = [];
+      await order.save();
+      if (wasDispatched && riderId) {
+        await User.findByIdAndUpdate(riderId, { isAvailable: true });
+        io.to(`rider:${riderId}`).emit("orderCancelled", order);
+      }
+      if (wasAwaiting && candidates.length > 0) {
+        candidates.forEach((cId) => {
+          io.to(`rider:${cId}`).emit("orderCancelled", order);
+        });
+      }
+
+      res.json({ message: "Order cancelled", order });
     } catch (err) {
       res.status(500).json({ message: "Server error", error: err.message });
     }

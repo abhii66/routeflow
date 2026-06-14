@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+@theme {
+  --color-ink: #1A1F2C;
+  --color-muted: #64748B;
+  --color-accent: #3D5AFE;
+  --color-success: #16A34A;
+  --color-warning: #F59E0B;
+  --color-surface: #F7F8FA;
+  --font-sans: 'Inter', sans-serif;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+}

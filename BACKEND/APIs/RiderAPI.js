@@ -12,9 +12,19 @@ riderApp.get("/", verifyToken, authorizeRoles("manager"), async (req, res) => {
   try {
     const riders = await User.find({ role: "rider" })
       .select("-password")
-      .sort({ isAvailable: -1 }); // available riders first
+      .sort({ isAvailable: -1 });
 
-    res.json(riders);
+    const ridersWithStats = await Promise.all(
+      riders.map(async (rider) => {
+        const completedDeliveries = await Order.countDocuments({
+          assignedRider: rider._id,
+          status: "Delivered",
+        });
+        return { ...rider.toObject(), completedDeliveries };
+      }),
+    );
+
+    res.json(ridersWithStats);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
@@ -62,7 +72,7 @@ riderApp.get(
             _id: {
               $dateToString: { format: "%Y-%m-%d", date: "$deliveredAt" },
             },
-            dailyEarnings: { $sum: "$deliveryFee" },
+            dailyEarnings: { $sum: "$riderEarning" },
             deliveries: { $sum: 1 },
           },
         },
@@ -90,9 +100,13 @@ riderApp.get(
   async (req, res) => {
     try {
       const { status } = req.query;
-      const filter = { assignedRider: req.user._id };
+      const filter = {
+        $or: [
+          { assignedRider: req.user._id },
+          { candidateRiders: req.user._id },
+        ],
+      };
       if (status) filter.status = status;
-
       const orders = await Order.find(filter)
         .populate("storeId", "name address location")
         .sort({ createdAt: -1 });

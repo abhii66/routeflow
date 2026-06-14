@@ -26,10 +26,17 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <p className="font-semibold text-xl mb-1">RouteFlow</p>
-        <p className="text-sm text-muted mb-8">Sign in to manage deliveries</p>
+    <div className="min-h-screen flex items-center justify-center bg-surface px-4">
+      <div className="w-full max-w-sm bg-white border border-gray-100 rounded-lg p-8">
+        <div className="flex items-center gap-2.5 mb-6">
+          <div className="w-9 h-9 rounded-md bg-accent flex items-center justify-center">
+            <i className="ti ti-route text-lg text-white" />
+          </div>
+          <p className="font-medium text-base">RouteFlow</p>
+        </div>
+
+        <h2 className="text-xl font-semibold mb-1">Welcome back</h2>
+        <p className="text-sm text-muted mb-6">Sign in to manage deliveries</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>

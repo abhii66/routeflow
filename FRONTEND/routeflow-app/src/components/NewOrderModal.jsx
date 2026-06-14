@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import api from '../store/axios.jsx'
+import api from '../store/axios'
+
+const DELIVERY_FEE = 30
 
 export default function NewOrderModal({ onClose, onCreated }) {
   const [customer, setCustomer] = useState({ name: '', phone: '', address: '' })
@@ -14,7 +16,7 @@ export default function NewOrderModal({ onClose, onCreated }) {
   const addItem = () => setItems((prev) => [...prev, { name: '', qty: 1, price: '' }])
   const removeItem = (index) => setItems((prev) => prev.filter((_, i) => i !== index))
 
-  const totalAmount = items.reduce((sum, item) => sum + (Number(item.qty) || 0) * (Number(item.price) || 0), 0)
+  const itemsSubtotal = items.reduce((sum, item) => sum + (Number(item.qty) || 0) * (Number(item.price) || 0), 0)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -24,7 +26,8 @@ export default function NewOrderModal({ onClose, onCreated }) {
       await api.post('/orders-api/', {
         customer,
         items: items.map((i) => ({ name: i.name, qty: Number(i.qty), price: Number(i.price) })),
-        totalAmount,
+        totalAmount: itemsSubtotal,
+        deliveryFee: DELIVERY_FEE,
       })
       onCreated()
     } catch (err) {
@@ -117,9 +120,19 @@ export default function NewOrderModal({ onClose, onCreated }) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-            <p className="text-sm font-medium">Total</p>
-            <p className="text-sm font-medium">₹{totalAmount}</p>
+          <div className="border-t border-gray-100 pt-3 flex flex-col gap-1">
+            <div className="flex items-center justify-between text-sm text-muted">
+              <p>Items subtotal</p>
+              <p>₹{itemsSubtotal}</p>
+            </div>
+            <div className="flex items-center justify-between text-sm text-muted">
+              <p>Delivery fee</p>
+              <p>₹{DELIVERY_FEE}</p>
+            </div>
+            <div className="flex items-center justify-between text-sm font-medium pt-1 border-t border-gray-50">
+              <p>Customer pays</p>
+              <p>₹{itemsSubtotal + DELIVERY_FEE}</p>
+            </div>
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}

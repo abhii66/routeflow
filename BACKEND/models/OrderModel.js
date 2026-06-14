@@ -27,12 +27,13 @@ const orderSchema = new Schema(
 
     status: {
       type: String,
-      enum: ["Pending", "Dispatched", "Delivered", "Cancelled"],
+      enum: ['Pending', 'AwaitingAcceptance', 'Dispatched', 'Delivered', 'Cancelled'],
       default: "Pending",
     },
 
     assignedRider: { type: Schema.Types.ObjectId, ref: "User", default: null },
-
+    candidateRiders: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    riderEarning: { type: Number, default: null },
     dispatchedAt: { type: Date, default: null },
     deliveredAt: { type: Date, default: null },
   },
