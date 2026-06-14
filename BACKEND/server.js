@@ -17,7 +17,10 @@ config();
 app.use(
   cors({
     origin: function (origin, callback) {
-      const allowedOrigins = ["http://localhost:5173"];
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "https://routeflow-nu.vercel.app",
+      ];
 
       // allow all vercel preview URLs
       if (
@@ -35,11 +38,11 @@ app.use(
 );
 app.use(exp.json());
 //cookie parser
-app.use(cookieParser())
+app.use(cookieParser());
 app.use("/auth-api", userApp);
 app.use("/orders-api", orderApp);
 app.use("/riders-api", riderApp);
-app.use('/store-api', storeApp)
+app.use("/store-api", storeApp);
 const port = process.env.PORT;
 //connect to db
 // console.log("ENV:", process.env.MONGO_URI);
