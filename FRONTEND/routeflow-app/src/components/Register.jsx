@@ -70,7 +70,7 @@ export default function Register() {
               value={form.name}
               onChange={update('name')}
               className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
-              placeholder="Abhiii"
+              placeholder="Enter your full name"
             />
           </div>
 
@@ -82,7 +82,7 @@ export default function Register() {
               value={form.email}
               onChange={update('email')}
               className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
-              placeholder="you@store.com"
+              placeholder="Enter your email"
             />
           </div>
 
@@ -93,7 +93,7 @@ export default function Register() {
                 value={form.phone}
                 onChange={update('phone')}
                 className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
-                placeholder="9999999999"
+                placeholder="Enter your phone number"
               />
             </div>
           )}

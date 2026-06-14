@@ -63,7 +63,7 @@ export default function StorePage() {
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
-            placeholder="Abhiii Pharmacy"
+            placeholder="Enter Your Store Name"
           />
         </div>
 
@@ -94,7 +94,7 @@ export default function StorePage() {
             value={form.address}
             onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
             className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
-            placeholder="Hyderabad, Telangana"
+            placeholder="Enter your store address"
           />
         </div>
 
