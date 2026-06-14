@@ -11,7 +11,7 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     if (!isAuthenticated || !user) return
 
-    const socket = io('http://localhost:7909', {
+    const socket = io('https://routeflow-backend-9l4m.onrender.com', {
       withCredentials: true,
     })
     socketRef.current = socket
