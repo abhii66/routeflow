@@ -13,6 +13,7 @@ export function SocketProvider({ children }) {
 
     const socket = io('https://routeflow-backend-9l4m.onrender.com', {
       withCredentials: true,
+      transports: ['websocket', 'polling'],
     })
     socketRef.current = socket
 
